@@ -32,7 +32,7 @@ Offers filters for campaign name, source, pricing model, platform, and budget. D
 - CPM (Cost Per Mille)
 
 ## Usage
-Clone the repository to your local machine.
-Install the necessary dependencies (e.g., Streamlit, Plotly, Pandas).
-Run the Streamlit app by executing streamlit run app.py in your terminal.
-Navigate to the URL provided to access the Campaign Analytics Dashboard.
+- Clone the repository to your local machine.
+- Install the necessary dependencies (e.g., Streamlit, Plotly, Pandas).
+- Run the Streamlit app by executing streamlit run app.py in your terminal.
+- Navigate to the URL provided to access the Campaign Analytics Dashboard.
