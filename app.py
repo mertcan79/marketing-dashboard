@@ -8,11 +8,11 @@ import humanize
 
 # Load data
 df = process()  # Replace "df.csv" with the path to your CSV file
-
+df = df.sort_values('Date')
 
 # Sidebar for page selection
 st.sidebar.header("Marketing Dashboard")
-page = st.sidebar.radio("", ["Overview", "Details"], index=0, key='page')
+page = st.sidebar.radio("", ["Overview", "Details", "Meeting Plan"], index=0, key='page')
 
 # Main Overview Page
 if page == "Overview":
@@ -190,3 +190,156 @@ if page == "Overview":
     with col8:
         st.plotly_chart(fig_bar_cpconv, use_container_width=True)
       
+# Details Page
+elif page == "Details":
+    st.title("Details")
+    # Multi-selection for filtering by source and pricing model
+    st.sidebar.subheader("Filters")
+    campaign_filter = st.sidebar.text_input("Search Campaign:")
+
+    date_range = st.sidebar.date_input("Select Date Range:", [df['Date'].min(), df['Date'].max()])
+    selected_sources = st.sidebar.multiselect("Select Source(s):", options=df['Source'].unique(), default=df['Source'].unique())
+    selected_pricing_models = st.sidebar.multiselect("Select Pricing Model(s):", options=df['Pricing_Model'].unique(), default=df['Pricing_Model'].unique())
+    selected_platforms = st.sidebar.multiselect("Select Platform(s):", options=df['Platform'].unique(), default=df['Platform'].unique())
+    selected_budget = st.sidebar.multiselect("Select Budget(s):", options=df['Budget'].unique(), default=df['Budget'].unique())
+    selected_country = st.sidebar.multiselect("Select Country(s):", options=df['Country'].unique(), default=df['Country'].unique())
+    
+    filtered_df = df[(df['Source'].isin(selected_sources)) & (df['Pricing_Model'].isin(selected_pricing_models)) & (df['Platform'].isin(selected_platforms)) 
+                     & (df['Budget'].isin(selected_budget)) & (df['Country'].isin(selected_country)) & (df['Date'].dt.date >= date_range[0]) & (df['Date'].dt.date <= date_range[1])]
+    
+    if campaign_filter:
+        filtered_df = filtered_df[filtered_df['Campaign'].str.contains(campaign_filter, case=False)]
+        
+    filtered_df['Month_Week'] = filtered_df['Date'].dt.strftime('%Y-%m Week %U')
+    
+    # 1. Impressions
+    st.subheader("Impressions and CTR over Time")
+    # Graph for order per spend
+    grouped_per_week = filtered_df.groupby('Month_Week', as_index=False).agg({"Impressions": "sum", "CTR": 'mean',
+                                                                                    'Clicks': 'sum', 'CPC': 'mean',
+                                                                                    'Installs': 'sum', 'CPI': 'mean'})
+    impressions_ctr = px.bar(grouped_per_week, x='Month_Week', y='Impressions', title='Impressions vs CTR')
+
+    # Add Total Order/Installs Ratio line
+    impressions_ctr.add_scatter(x=grouped_per_week['Month_Week'], y=grouped_per_week['CTR'], 
+                            mode='markers', name='CTR', yaxis='y2', marker_color='green')
+
+    # Update layout to include two y-axes
+    impressions_ctr.update_layout(yaxis=dict(title='Impressions', color='blue', side='left'),
+                    yaxis2=dict( color='red', overlaying='y', side='right'),
+                    legend=dict(y=0.3, traceorder='reversed'))
+
+    st.plotly_chart(impressions_ctr, use_container_width=True)
+    
+    # 2. Clicks
+    st.subheader("Clicks and CPC over Time")
+    # Graph for order per spend
+    clicks_cpc = px.bar(grouped_per_week, x='Month_Week', y='Clicks', title='CLicks vs CPC')
+
+    # Add Total Order/Installs Ratio line
+    clicks_cpc.add_scatter(x=grouped_per_week['Month_Week'], y=grouped_per_week['CPC'], 
+                            mode='markers', name='CPC', yaxis='y2', marker_color='green')
+
+    # Update layout to include two y-axes
+    clicks_cpc.update_layout(yaxis=dict(title='Clicks', color='blue', side='left'),
+                    yaxis2=dict( color='red', overlaying='y', side='right'),
+                    legend=dict(y=0.3, traceorder='reversed'))
+
+    st.plotly_chart(clicks_cpc, use_container_width=True)
+    
+    # 3. Installs
+    st.subheader("Installs and CPI over Time")
+    # Graph for order per spend
+    installs_cpi = px.bar(grouped_per_week, x='Month_Week', y='Installs', title='Installs vs CPI')
+
+    # Add Total Order/Installs Ratio line
+    installs_cpi.add_scatter(x=grouped_per_week['Month_Week'], y=grouped_per_week['CPI'], 
+                            mode='markers', name='CPI', yaxis='y2', marker_color='green')
+
+    # Update layout to include two y-axes
+    installs_cpi.update_layout(yaxis=dict(title='Installs', color='blue', side='left'),
+                    yaxis2=dict( color='red', overlaying='y', side='right'),
+                    legend=dict(y=0.3, traceorder='reversed'))
+
+    st.plotly_chart(installs_cpi, use_container_width=True)   
+    
+    # 4. Graph for order per spend
+    st.subheader("Spend and CPM over Time")
+    grouped_per_week_order = filtered_df.groupby('Month_Week', as_index=False).agg({"Spend": "sum", "CPM": 'mean'})
+    order_spend = px.bar(grouped_per_week_order, x='Month_Week', y='Spend', title='CPM vs Spend')
+
+    # Add Total Order/Installs Ratio line
+    order_spend.add_scatter(x=grouped_per_week_order['Month_Week'], y=grouped_per_week_order['CPM'], 
+                            mode='markers', name='CPM', yaxis='y2', marker_color='green')
+
+    # Update layout to include two y-axes
+    order_spend.update_layout(yaxis=dict(title='Spend', color='blue', side='left'),
+                    yaxis2=dict( color='red', overlaying='y', side='right'),
+                    legend=dict(y=0.3, traceorder='reversed'))
+
+    st.plotly_chart(order_spend, use_container_width=True)
+       
+    # 5. Cards showing third/first order ratio and first_order/install ratio
+    st.subheader("Order Analysis")
+    
+    order_stats = df.groupby(['Source', 'Platform']).agg({'Installs': 'sum', 'Total_Orders': 'sum', 'Spend': 'sum',
+                                                          'First_Order': 'sum', 'Second_Order': 'sum', 'Third_Order': 'sum'}).reset_index()
+    st.write(order_stats)
+    
+    third_first_order_ratio = (filtered_df['Third_Order'].mean() / filtered_df['First_Order'].mean())
+    first_order_install_ratio = (filtered_df['First_Order'].mean() / filtered_df['Installs'].mean())
+    total_order_install_ratio = (filtered_df['Total_Orders'].mean() / filtered_df['Installs'].mean())
+    
+    col3, col4, col5 = st.columns(3)
+    with col3:
+        st.info(f"Third/First Order Ratio: {third_first_order_ratio:.2f}")
+    with col4:
+        st.info(f"First Order/Install Ratio: {first_order_install_ratio:.2f}")
+    with col5:
+        st.info(f"Total Orders/Installs Ratio: {total_order_install_ratio:.2f}")
+    
+    # 6. Search dataset
+    grouped_df = filtered_df.groupby('Campaign', as_index=False).agg({'CTR':'mean', 'CPC':'mean', 'CPI':'mean',
+                                                     'CPM': 'mean', 'Conversion_Rate':'mean',
+                                                     'Platform':'unique', 'Country':'unique', 'Source':'unique',
+                                                     'Budget': 'unique', 'Pricing_Model': 'unique'})
+    grouped_df = grouped_df[grouped_df['Campaign'].str.contains(campaign_filter, case=False)]
+    
+ 
+    st.write("Dataset")
+    st.dataframe(grouped_df)
+     
+    # 7. Graphs per campaign
+    st.subheader("Performance per Campaign")
+    # Metric selection button
+    selected_metric = st.radio("Select Metric", options=['CPM', 'CTR', 'CPC', 'CPI', 'Conversion_Rate'])
+
+    # Group the data by campaign and month_week, aggregating the selected metric
+    campaign_date_df = filtered_df.groupby(['Campaign', 'Month_Week']).agg({selected_metric: 'mean'}).reset_index().sort_values('Month_Week')
+    campaign_df = filtered_df.groupby(['Campaign', ]).agg({selected_metric: 'mean'}).reset_index()
+    
+    # Create line charts for each metric
+    per_campaign_date = px.line(campaign_date_df, x='Month_Week', y=selected_metric, color='Campaign',)
+    per_campaign = px.bar(campaign_df, x='Campaign', y=selected_metric, title='Campaign Performance')
+    # Customize the layout
+    per_campaign.update_layout(
+        xaxis_title='Campaign',
+        yaxis_title=selected_metric,
+        legend_title='Campaign',
+        hovermode='x',
+        template='plotly_white',  # You can change the template if needed
+        legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="right", x=1)
+    )
+    # Customize the layout
+    per_campaign_date.update_layout(
+        xaxis_title='Month_Week',
+        yaxis_title=selected_metric,
+        legend_title='Campaign',
+        hovermode=False,
+        template='plotly_white',  # You can change the template if needed
+        legend=dict(orientation="h", yanchor="bottom", y=1.1, xanchor="right", x=1)
+    )
+    st.plotly_chart(per_campaign, use_container_width=True)
+    campaign_over_time = st.expander("Click to see campaign trends over time")
+    with campaign_over_time:
+        st.plotly_chart(per_campaign_date, use_container_width=True)
