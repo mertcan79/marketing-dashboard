@@ -19,17 +19,17 @@ Details Page:
 Offers filters for campaign name, source, pricing model, platform, and budget. Displays bar charts per week for impressions, click, spend, and installs divided by source. Also includes line charts per metric, an order analysis table, order ratio cards, and cost per conversion vs spend bar/scatter plot per week. Dataframe Display: Presents all the data in a tabular format.
 
 ## Metrics Tracked
-Impressions
-Clicks
-Spend
-Installs
-Orders
-CTR (Click-Through Rate)
-CPC (Cost Per Click)
-CPI (Cost Per Install)
-Conversion Rate
-Cost Per Conversion
-CPM (Cost Per Mille)
+- Impressions
+- Clicks
+- Spend
+- Installs
+- Orders
+- CTR (Click-Through Rate)
+- CPC (Cost Per Click)
+- CPI (Cost Per Install)
+- Conversion Rate
+- Cost Per Conversion
+- CPM (Cost Per Mille)
 
 ## Usage
 Clone the repository to your local machine.
