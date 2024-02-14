@@ -12,7 +12,7 @@ df = df.sort_values('Date')
 
 # Sidebar for page selection
 st.sidebar.header("Marketing Dashboard")
-page = st.sidebar.radio("", ["Overview", "Details", "Meeting Plan"], index=0, key='page')
+page = st.sidebar.radio("", ["Overview", "Details", ], index=0, key='page')
 
 # Main Overview Page
 if page == "Overview":
